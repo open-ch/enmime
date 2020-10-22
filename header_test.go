@@ -427,7 +427,7 @@ func TestFixUnEscapedQuotes(t *testing.T) {
 }
 
 func TestReadHeader(t *testing.T) {
-	prefix := "From: hooman\n \n being\n"
+	prefix := "From: hooman      \n being\n"
 	suffix := "Subject: hi\n\nPart body\n"
 
 	data := make([]byte, 16*1024)
@@ -553,6 +553,32 @@ func TestReadHeader(t *testing.T) {
 				" dkim=pass header.i=@2",
 			correct: true,
 		},
+		{
+			input: "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\n" +
+				"        d=1e100.net; s=20161025;\n" +
+				"        h=x-gm-message-state:from:to:subject:date:message-id:mime-version\n" +
+				"         :thread-index:content-language;\n" +
+				"        bh=F7rYatmWbIoPmwEHjsVRcQXzbATXDI1KwPkGSFpJ3mo=;\n" +
+				"        b=aMztrV/tXxiOqcb2sZmzeCmFSFRGMSR7wdwzQW8ra6p6i/NyyApyTspst+SJhHC9oW\n" +
+				"         HEclspQvn+lZ6nGSIvl6VvblyfT9gGaeO4hsWkmBEbTYLPyRnr2893aAMKWDnowtXZbd\n" +
+				"         wvyhWm7SmkbafPFqzMF/maRcvWApROrlsD+u8/4QVjtdmOVeixKpMe7GmObNcFfNkBLn\n" +
+				"         wdmFSmkrU/A+4O6HRMwaCjVbEhZrGiZwUGMKyFEqkPvrGxiONonHSywqKqftrX193AzY\n" +
+				"         ExVMboLLktPrYooqMJwerYr4h/PmysRgaYEPd5eoRY+nnAtMJo3ZBmuztLIfnmnEa/z1\n" +
+				"         Rn+A==\n",
+			hname: "X-Google-DKIM-Signature",
+			want: "v=1; a=rsa-sha256; c=relaxed/relaxed;" +
+				" d=1e100.net; s=20161025;" +
+				" h=x-gm-message-state:from:to:subject:date:message-id:mime-version" +
+				" :thread-index:content-language;" +
+				" bh=F7rYatmWbIoPmwEHjsVRcQXzbATXDI1KwPkGSFpJ3mo=;" +
+				" b=aMztrV/tXxiOqcb2sZmzeCmFSFRGMSR7wdwzQW8ra6p6i/NyyApyTspst+SJhHC9oW" +
+				" HEclspQvn+lZ6nGSIvl6VvblyfT9gGaeO4hsWkmBEbTYLPyRnr2893aAMKWDnowtXZbd" +
+				" wvyhWm7SmkbafPFqzMF/maRcvWApROrlsD+u8/4QVjtdmOVeixKpMe7GmObNcFfNkBLn" +
+				" wdmFSmkrU/A+4O6HRMwaCjVbEhZrGiZwUGMKyFEqkPvrGxiONonHSywqKqftrX193AzY" +
+				" ExVMboLLktPrYooqMJwerYr4h/PmysRgaYEPd5eoRY+nnAtMJo3ZBmuztLIfnmnEa/z1" +
+				" Rn+A==",
+			correct: true,
+		},
 	}
 
 	for _, tt := range ttable {
@@ -567,7 +593,7 @@ func TestReadHeader(t *testing.T) {
 
 		// Check prefix
 		got := header.Get("From")
-		want := "hooman  being"
+		want := "hooman being"
 		if got != want {
 			t.Errorf("From header got: %q, want: %q\ninput: %q", got, want, tt.input)
 		}

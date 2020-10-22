@@ -90,7 +90,6 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 	// buf holds the massaged output for textproto.Reader.ReadMIMEHeader()
 	buf := &bytes.Buffer{}
 	tp := textproto.NewReader(r)
-	firstHeader := true
 	for {
 		// Pull out each line of the headers as a temporary slice s
 		s, err := tp.ReadLineBytes()
@@ -114,6 +113,7 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 				// Starts with space: continuation
 				buf.WriteByte(' ')
 				buf.Write(sTrimmed)
+				buf.Write([]byte{'\r', '\n'})
 				continue
 			}
 		}
@@ -124,10 +124,6 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 		}
 		if firstColon > 0 {
 			// Contains a colon, treat as a new header line
-			if !firstHeader {
-				// New Header line, end the previous
-				buf.Write([]byte{'\r', '\n'})
-			}
 
 			// Behavior change in net/textproto package in Golang 1.12.10 and 1.13.1:
 			// A space preceding the first colon in a header line is no longer handled
@@ -139,13 +135,14 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 
 			s = textproto.TrimBytes(s)
 			buf.Write(s)
-			firstHeader = false
+			buf.Write([]byte{'\r', '\n'})
 		} else {
 			// No colon: potential non-indented continuation
 			if len(s) > 0 {
 				// Attempt to detect and repair a non-indented continuation of previous line
 				buf.WriteByte(' ')
 				buf.Write(s)
+				buf.Write([]byte{'\r', '\n'})
 				p.addWarning(ErrorMalformedHeader, "Continued line %q was not indented", s)
 			} else {
 				// Empty line, finish header parsing
@@ -154,7 +151,7 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 			}
 		}
 	}
-	buf.Write([]byte{'\r', '\n'})
+	// fmt.Println(string(buf.Bytes()))
 	tr := textproto.NewReader(bufio.NewReader(buf))
 	header, err := tr.ReadMIMEHeader()
 	return header, errors.WithStack(err)
