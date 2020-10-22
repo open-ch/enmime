@@ -151,7 +151,6 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 			}
 		}
 	}
-	// fmt.Println(string(buf.Bytes()))
 	tr := textproto.NewReader(bufio.NewReader(buf))
 	header, err := tr.ReadMIMEHeader()
 	return header, errors.WithStack(err)
