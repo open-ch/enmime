@@ -526,7 +526,7 @@ func TestReadHeader(t *testing.T) {
 		{
 			input:   "X-Not-Continuation: line1=foo;\n X-Next-Header: bar\n",
 			hname:   "X-Not-Continuation",
-			want:    "line1=foo;",
+			want:    "line1=foo; X-Next-Header: bar",
 			correct: true,
 		},
 		{
@@ -577,6 +577,14 @@ func TestReadHeader(t *testing.T) {
 				" wdmFSmkrU/A+4O6HRMwaCjVbEhZrGiZwUGMKyFEqkPvrGxiONonHSywqKqftrX193AzY" +
 				" ExVMboLLktPrYooqMJwerYr4h/PmysRgaYEPd5eoRY+nnAtMJo3ZBmuztLIfnmnEa/z1" +
 				" Rn+A==",
+			correct: true,
+		},
+		{
+			input: "X-subject: Upcoming Changes to SSL Certificates in Amazon CloudWatch Logs [AWS\n" +
+				" Account: 193977011882]\n",
+			hname: "X-subject",
+			want: "Upcoming Changes to SSL Certificates in Amazon CloudWatch Logs [AWS" +
+				" Account: 193977011882]",
 			correct: true,
 		},
 	}

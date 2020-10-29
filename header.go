@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"mime"
 	"net/textproto"
-	"regexp"
 	"strings"
 
 	"github.com/jhillyerd/enmime/internal/coding"
@@ -92,11 +91,6 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 	buf := &bytes.Buffer{}
 	tp := textproto.NewReader(r)
 	firstHeader := true
-	headerDeclarationRegex, err := regexp.Compile("^[a-zA-Z0-9\\-]+\\: ")
-	if err != nil {
-		buf.Write([]byte{'\r', '\n'})
-		return nil, errors.WithStack(err)
-	}
 	for {
 		// Pull out each line of the headers as a temporary slice s
 		s, err := tp.ReadLineBytes()
@@ -107,19 +101,10 @@ func readHeader(r *bufio.Reader, p *Part) (textproto.MIMEHeader, error) {
 		firstColon := bytes.IndexByte(s, ':')
 		firstSpace := bytes.IndexAny(s, " \t\n\r")
 		if firstSpace == 0 {
-			// If the line begins with some space, followed by a header-like
-			// string (any combination of upper and lower case letters,
-			// numbers and dash sign), then it should not be considered
-			// as a continuation but as a new header.
-			sTrimmed := textproto.TrimBytes(s)
-			if firstSpace < firstColon && headerDeclarationRegex.Match(sTrimmed) {
-				firstColon = bytes.IndexByte(s, ':')
-			} else {
-				// Starts with space: continuation
-				buf.WriteByte(' ')
-				buf.Write(sTrimmed)
-				continue
-			}
+			// Starts with space: continuation
+			buf.WriteByte(' ')
+			buf.Write(textproto.TrimBytes(s))
+			continue
 		}
 		if firstColon == 0 {
 			// Can't parse line starting with colon: skip
